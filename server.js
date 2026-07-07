@@ -18,7 +18,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
     .filter(Boolean);
 
 app.use(cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins :
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     methods: ['GET', 'POST', 'DELETE'],
     credentials: true
 }));
