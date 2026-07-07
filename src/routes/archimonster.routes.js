@@ -35,6 +35,28 @@ router.post('/registerArchimonster', async (req, res) => {
     }
 });
 
+// GET /archimonstruos
+// Lista todas las posiciones de archimonstruos registradas actualmente
+// (antes de que la limpieza automática de 30 min las borre). Uso: panel admin.
+router.get('/archimonstruos', async (req, res) => {
+    try {
+        const archimonsters = await Archimonster.find().sort({ date: -1 });
+        res.status(200).json(
+            archimonsters.map((a) => ({
+                id: a.id,
+                name: a.name,
+                server: a.server,
+                position: a.position,
+                date: a.date,
+                imageUrl: getImageUrl(a.id)
+            }))
+        );
+    } catch (error) {
+        console.error('Error al listar archimonstruos:', error);
+        res.status(500).json({ message: 'Error al listar archimonstruos.' });
+    }
+});
+
 // GET /fmwFEn0nP8Z5gmQq9ZVVWCt4uyF3EX/position/:id
 // Ruta "secreta" (protegida solo por lo impredecible de la URL, no por
 // autenticación real) usada internamente para depurar/consultar sin licencia.
