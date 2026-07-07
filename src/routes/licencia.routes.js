@@ -74,6 +74,23 @@ router.post('/validateLicencia', async (req, res) => {
     }
 });
 
+// DELETE /licencias/:licencia
+// Revoca una licencia (ej. si se ha filtrado o quieres desactivarla).
+router.delete('/licencias/:licencia', async (req, res) => {
+    const { licencia } = req.params;
+
+    try {
+        const result = await Licencia.deleteOne({ licencia });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Licencia no encontrada.' });
+        }
+        res.status(200).json({ message: 'Licencia eliminada con éxito.' });
+    } catch (error) {
+        console.error('Error al eliminar la licencia:', error);
+        res.status(500).json({ message: 'Error al eliminar la licencia.' });
+    }
+});
+
 // GET /licencias
 router.get('/licencias', async (req, res) => {
     try {
