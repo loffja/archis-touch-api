@@ -73,4 +73,27 @@ router.get('/archimonstruos', async (req, res) => {
     }
 });
 
+// GET /admin/archimonstruos
+// Igual que /archimonstruos, pero SÍ incluye la posición exacta. Solo para
+// ti como administrador (evita tener que gastar una licencia para ver
+// dónde está algo). Protegida con la misma clave del panel /admin.
+router.get('/admin/archimonstruos', requireAdminKey, async (req, res) => {
+    try {
+        const archimonsters = await Archimonster.find().sort({ date: -1 });
+        res.status(200).json(
+            archimonsters.map((a) => ({
+                id: a.id,
+                name: a.name,
+                server: a.server,
+                position: a.position,
+                date: a.date,
+                imageUrl: getImageUrl(a.id)
+            }))
+        );
+    } catch (error) {
+        console.error('Error al listar archimonstruos (admin):', error);
+        res.status(500).json({ message: 'Error al listar archimonstruos.' });
+    }
+});
+
 export default router;
