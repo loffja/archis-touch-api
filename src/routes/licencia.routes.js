@@ -26,6 +26,10 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
         return res.status(400).json({ message: 'Faltan datos en la solicitud' });
     }
 
+    if (typeof pc_id !== 'string' || typeof licencia !== 'string') {
+        return res.status(400).json({ message: 'Formato de datos inválido.' });
+    }
+
     let expiresAt = null;
     if (durationValue !== undefined && durationValue !== null && durationValue !== '') {
         const unitMs = UNIT_TO_MS[durationUnit];
@@ -63,6 +67,15 @@ router.post('/validateLicencia', async (req, res) => {
         return res.status(400).json({ message: 'Licencia o ID de archimonstruo no proporcionados.' });
     }
 
+    if (typeof licencia !== 'string' || typeof archimonsterId !== 'string' && typeof archimonsterId !== 'number') {
+        return res.status(400).json({ message: 'Formato de datos inválido.' });
+    }
+
+    const archimonsterIdNum = parseInt(archimonsterId, 10);
+    if (!Number.isInteger(archimonsterIdNum)) {
+        return res.status(400).json({ message: 'archimonsterId inválido.' });
+    }
+
     try {
         const licenciaExistente = await Licencia.findOne({ licencia });
 
@@ -76,7 +89,7 @@ router.post('/validateLicencia', async (req, res) => {
 
         const now = new Date();
         const usedEntry = licenciaExistente.usedFor.find(
-            (entry) => entry.id === parseInt(archimonsterId)
+            (entry) => entry.id === archimonsterIdNum
         );
 
         if (usedEntry) {
@@ -88,12 +101,13 @@ router.post('/validateLicencia', async (req, res) => {
             }
             usedEntry.date = now;
         } else {
-            licenciaExistente.usedFor.push({ id: parseInt(archimonsterId), date: now });
+            licenciaExistente.usedFor.push({ id: archimonsterIdNum, date: now });
         }
 
         await licenciaExistente.save();
 
-        const archimonster = await Archimonster.findOne({ id: parseInt(archimonsterId) });
+        const archimonster = await Archimonster.findOne({ id: archimonsterIdNum });
+
         if (!archimonster) {
             return res.status(404).json({ message: 'Archimonstruo no encontrado.' });
         }
