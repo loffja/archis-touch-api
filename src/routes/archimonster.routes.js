@@ -60,7 +60,6 @@ router.get('/archimonstruos', async (req, res) => {
                 id: a.id,
                 name: a.name,
                 server: a.server,
-                position: a.position,
                 date: a.date,
                 imageUrl: getImageUrl(a.id)
             }))
