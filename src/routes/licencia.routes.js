@@ -6,17 +6,48 @@ const router = Router();
 
 const TWO_MINUTES_MS = 2 * 60 * 1000;
 
+// Unidades de duración soportadas al registrar una licencia con caducidad.
+const UNIT_TO_MS = {
+    minutes: 60 * 1000,
+    hours: 60 * 60 * 1000,
+    days: 24 * 60 * 60 * 1000,
+    weeks: 7 * 24 * 60 * 60 * 1000,
+    months: 30 * 24 * 60 * 60 * 1000 // mes aproximado de 30 días
+};
+
 // POST /registerLicencia
+// Body: { pc_id, licencia, durationValue?, durationUnit? }
+// Si no se envían durationValue/durationUnit, la licencia es permanente.
 router.post('/registerLicencia', async (req, res) => {
-    const { pc_id, licencia } = req.body;
+    const { pc_id, licencia, durationValue, durationUnit } = req.body;
 
     if (!pc_id || !licencia) {
         return res.status(400).json({ message: 'Faltan datos en la solicitud' });
     }
 
+    let expiresAt = null;
+    if (durationValue !== undefined && durationValue !== null && durationValue !== '') {
+        const unitMs = UNIT_TO_MS[durationUnit];
+        const value = Number(durationValue);
+
+        if (!unitMs) {
+            return res.status(400).json({
+                message: `Unidad de duración inválida. Usa una de: ${Object.keys(UNIT_TO_MS).join(', ')}`
+            });
+        }
+        if (!Number.isFinite(value) || value <= 0) {
+            return res.status(400).json({ message: 'durationValue debe ser un número mayor que 0.' });
+        }
+
+        expiresAt = new Date(Date.now() + value * unitMs);
+    }
+
     try {
-        await new Licencia({ pc_id, licencia }).save();
-        res.status(200).json({ message: 'Licencia registrada con éxito' });
+        await new Licencia({ pc_id, licencia, expiresAt }).save();
+        res.status(200).json({
+            message: 'Licencia registrada con éxito',
+            expiresAt
+        });
     } catch (error) {
         console.error('Error al registrar la licencia:', error);
         res.status(500).json({ message: 'Error al registrar la licencia' });
@@ -36,6 +67,10 @@ router.post('/validateLicencia', async (req, res) => {
 
         if (!licenciaExistente) {
             return res.status(404).json({ message: 'Licencia no válida.' });
+        }
+
+        if (licenciaExistente.expiresAt && licenciaExistente.expiresAt <= new Date()) {
+            return res.status(403).json({ message: 'Esta licencia ha caducado.' });
         }
 
         const now = new Date();
@@ -100,7 +135,8 @@ router.get('/licencias', async (req, res) => {
                 pc_id: l.pc_id,
                 licencia: l.licencia,
                 usedFor: l.usedFor,
-                date: l.date
+                date: l.date,
+                expiresAt: l.expiresAt
             }))
         );
     } catch (error) {
