@@ -2,12 +2,17 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import archimonsterRoutes from './src/routes/archimonster.routes.js';
 import licenciaRoutes from './src/routes/licencia.routes.js';
 import { startCleanupJob } from './src/cleanupJob.js';
 
 const app = express();
+
+// --- Headers de seguridad estándar ---------------------------------------
+app.use(helmet());
 
 // --- CORS -------------------------------------------------------------
 // Orígenes permitidos a llamar a esta API. El frontend (React) vive en un
@@ -23,7 +28,33 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
+// Limita el tamaño de las peticiones para evitar payloads abusivos.
+app.use(express.json({ limit: '10kb' }));
+
+// --- Rate limiting ---------------------------------------------------------
+// Límite general: 100 peticiones por IP cada 15 minutos.
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Demasiadas peticiones, inténtalo más tarde.' }
+});
+app.use(generalLimiter);
+
+// Límite más estricto para validar/registrar licencias (evita fuerza bruta
+// probando claves): 20 intentos por IP cada 15 minutos.
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Demasiados intentos, espera unos minutos.' }
+});
+app.use(['/validateLicencia', '/registerLicencia'], authLimiter);
+
+// --- Base de datos ------------------------------------------------------
+
 
 // --- Base de datos ------------------------------------------------------
 if (!process.env.MONGO_URI) {
