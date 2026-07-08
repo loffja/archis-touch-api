@@ -9,7 +9,8 @@ const getImageUrl = (id) =>
     `https://raw.githubusercontent.com/Gianxaje/kkkal/main/img/${id}.png`;
 
 // POST /registerArchimonster
-// Usado por tu bot/juego para reportar dónde apareció un
+// Usado por tu bot/juego para reportar dónde apareció un archimonstruo.
+// Protegido con una clave propia del bot (distinta a la de admin).
 router.post('/registerArchimonster', requireBotKey, async (req, res) => {
     const { id, server, position } = req.body;
 
@@ -30,14 +31,12 @@ router.post('/registerArchimonster', requireBotKey, async (req, res) => {
 
     const name = ARCHIMONSTER_NAMES[idNum] || 'Desconocido';
 
-
     try {
         const archimonster = await Archimonster.findOneAndUpdate(
             { id: idNum },
             { name, server, position, date: Date.now() },
             { upsert: true, new: true }
         );
-
 
         res.status(200).json({
             message: 'Archimonstruo registrado con éxito',
@@ -51,7 +50,10 @@ router.post('/registerArchimonster', requireBotKey, async (req, res) => {
 
 // GET /archimonstruos
 // Lista todas las posiciones de archimonstruos registradas actualmente
-// (antes de que la limpieza automática de 30 min las borre). Uso: panel admin.
+// (antes de que la limpieza automática de 30 min las borre). Es pública
+// (la usa /live para mostrar imágenes+nombres), así que NO incluye la
+// posición exacta — eso solo se revela con una licencia válida vía
+// POST /validateLicencia.
 router.get('/archimonstruos', async (req, res) => {
     try {
         const archimonsters = await Archimonster.find().sort({ date: -1 });
@@ -67,29 +69,6 @@ router.get('/archimonstruos', async (req, res) => {
     } catch (error) {
         console.error('Error al listar archimonstruos:', error);
         res.status(500).json({ message: 'Error al listar archimonstruos.' });
-    }
-});
-
-// GET /fmwFEn0nP8Z5gmQq9ZVVWCt4uyF3EX/position/:id
-// Ruta "secreta" (protegida solo por lo impredecible de la URL, no por
-// autenticación real) usada internamente para depurar/consultar sin licencia.
-router.get('/fmwFEn0nP8Z5gmQq9ZVVWCt4uyF3EX/position/:id', async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const archimonster = await Archimonster.findOne({ id: parseInt(id) });
-        if (!archimonster) {
-            return res.status(404).json({ message: 'Archimonstruo no encontrado' });
-        }
-
-        res.status(200).json({
-            name: ARCHIMONSTER_NAMES[archimonster.id] || 'Desconocido',
-            server: archimonster.server,
-            position: archimonster.position,
-            imageUrl: getImageUrl(archimonster.id)
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Error al obtener la posición' });
     }
 });
 
