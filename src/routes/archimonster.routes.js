@@ -5,8 +5,6 @@ import { requireBotKey } from '../middleware/requireBotKey.js';
 
 const router = Router();
 
-const router = Router();
-
 const getImageUrl = (id) =>
     `https://raw.githubusercontent.com/Gianxaje/kkkal/main/img/${id}.png`;
 
