@@ -35,10 +35,11 @@ router.post('/registerArchimonster', requireBotKey, async (req, res) => {
 
     try {
         const archimonster = await Archimonster.findOneAndUpdate(
-            { id: parseInt(id) },
+            { id: idNum },
             { name, server, position, date: Date.now() },
             { upsert: true, new: true }
         );
+
 
         res.status(200).json({
             message: 'Archimonstruo registrado con éxito',
