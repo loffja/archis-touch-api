@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Licencia } from '../models/Licencia.js';
 import { Archimonster } from '../models/Archimonster.js';
+import { requireAdminKey } from '../middleware/requireAdminKey.js';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const UNIT_TO_MS = {
 // POST /registerLicencia
 // Body: { pc_id, licencia, durationValue?, durationUnit? }
 // Si no se envían durationValue/durationUnit, la licencia es permanente.
-router.post('/registerLicencia', async (req, res) => {
+router.post('/registerLicencia', requireAdminKey, async (req, res) => {
     const { pc_id, licencia, durationValue, durationUnit } = req.body;
 
     if (!pc_id || !licencia) {
@@ -111,7 +112,7 @@ router.post('/validateLicencia', async (req, res) => {
 
 // DELETE /licencias/:licencia
 // Revoca una licencia (ej. si se ha filtrado o quieres desactivarla).
-router.delete('/licencias/:licencia', async (req, res) => {
+router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
     const { licencia } = req.params;
 
     try {
@@ -127,7 +128,7 @@ router.delete('/licencias/:licencia', async (req, res) => {
 });
 
 // GET /licencias
-router.get('/licencias', async (req, res) => {
+router.get('/licencias', requireAdminKey, async (req, res) => {
     try {
         const licencias = await Licencia.find();
         res.status(200).json(
