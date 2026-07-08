@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { Archimonster } from '../models/Archimonster.js';
 import { ARCHIMONSTER_NAMES } from '../data/archimonsterNames.js';
+import { requireBotKey } from '../middleware/requireBotKey.js';
+
+const router = Router();
 
 const router = Router();
 
