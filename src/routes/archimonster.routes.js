@@ -11,15 +11,27 @@ const getImageUrl = (id) =>
     `https://raw.githubusercontent.com/Gianxaje/kkkal/main/img/${id}.png`;
 
 // POST /registerArchimonster
-// Usado por tu bot/juego para reportar dónde apareció un archimonstruo.
-router.post('/registerArchimonster', async (req, res) => {
+// Usado por tu bot/juego para reportar dónde apareció un
+router.post('/registerArchimonster', requireBotKey, async (req, res) => {
     const { id, server, position } = req.body;
 
     if (!id || !server || !position) {
         return res.status(400).json({ message: 'Faltan datos en la solicitud' });
     }
 
-    const name = ARCHIMONSTER_NAMES[id] || 'Desconocido';
+    const idNum = Number(id);
+    if (!Number.isInteger(idNum) || idNum <= 0) {
+        return res.status(400).json({ message: 'id inválido.' });
+    }
+    if (typeof server !== 'string' || typeof position !== 'string') {
+        return res.status(400).json({ message: 'Formato de datos inválido.' });
+    }
+    if (server.length > 100 || position.length > 100) {
+        return res.status(400).json({ message: 'server/position demasiado largos.' });
+    }
+
+    const name = ARCHIMONSTER_NAMES[idNum] || 'Desconocido';
+
 
     try {
         const archimonster = await Archimonster.findOneAndUpdate(
