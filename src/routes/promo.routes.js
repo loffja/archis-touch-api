@@ -68,7 +68,8 @@ router.post('/admin/promocodes', requireAdminKey, async (req, res) => {
             code: promo.code,
             durationValue: promo.durationValue,
             durationUnit: promo.durationUnit,
-            maxUses: promo.maxUses
+            maxUses: promo.maxUses,
+            by: req.adminName
         });
     } catch (error) {
         if (error.code === 11000) {
@@ -98,7 +99,7 @@ router.delete('/admin/promocodes/:code', requireAdminKey, async (req, res) => {
             return res.status(404).json({ message: 'Código no encontrado.' });
         }
         res.status(200).json({ message: 'Código eliminado.' });
-        logAction('codigo_eliminado', { code: req.params.code });
+        logAction('codigo_eliminado', { code: req.params.code, by: req.adminName });
     } catch (error) {
         console.error('Error al eliminar código promocional:', error);
         res.status(500).json({ message: 'Error al eliminar el código.' });
