@@ -4,6 +4,7 @@ import { ARCHIMONSTER_NAMES } from '../data/archimonsterNames.js';
 import { requireBotKey } from '../middleware/requireBotKey.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { broadcastArchimonster } from '../sse.js';
+import { DailyStat, todayKey } from '../models/DailyStat.js';
 
 const router = Router();
 
@@ -44,6 +45,13 @@ router.post('/registerArchimonster', requireBotKey, async (req, res) => {
             message: 'Archimonstruo registrado con éxito',
             archimonsterId: archimonster.id
         });
+
+        // Suma 1 al contador de hoy (no bloquea la respuesta).
+        DailyStat.updateOne(
+            { date: todayKey() },
+            { $inc: { count: 1 } },
+            { upsert: true }
+        ).catch((err) => console.error('Error actualizando DailyStat:', err));
 
         // Avisa en tiempo real: a /live sin posición, y al panel /admin con
         // posición incluida.
