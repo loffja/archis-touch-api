@@ -61,9 +61,25 @@ const authLimiter = rateLimit({
 });
 app.use(['/validateLicencia', '/registerLicencia', '/redeem'], authLimiter);
 
-// --- Base de datos ------------------------------------------------------
-if (!process.env.MONGO_URI) {
-    console.error('Falta la variable de entorno MONGO_URI. El servidor no puede arrancar sin ella.');
+// --- Variables de entorno requeridas --------------------------------------
+// Si falta cualquiera de estas, el servidor se niega a arrancar con un
+// mensaje claro, en vez de arrancar "a medias" y fallar más tarde de forma
+// confusa cuando alguien intente usar esa función.
+const REQUIRED_ENV_VARS = [
+    'MONGO_URI',
+    'ADMIN_API_KEY',
+    'BOT_API_KEY',
+    'DISCORD_WEBHOOK',
+    'DISCORD_WEBHOOK_LICENSES',
+    'ALLOWED_ORIGINS'
+];
+
+const missingEnvVars = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+if (missingEnvVars.length > 0) {
+    console.error(
+        `Faltan variables de entorno requeridas: ${missingEnvVars.join(', ')}. ` +
+        'El servidor no puede arrancar sin ellas.'
+    );
     process.exit(1);
 }
 
