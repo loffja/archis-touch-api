@@ -3,6 +3,7 @@ import { Archimonster } from '../models/Archimonster.js';
 import { ARCHIMONSTER_NAMES } from '../data/archimonsterNames.js';
 import { requireBotKey } from '../middleware/requireBotKey.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
+import { broadcastArchimonster } from '../sse.js';
 
 const router = Router();
 
@@ -43,6 +44,26 @@ router.post('/registerArchimonster', requireBotKey, async (req, res) => {
             message: 'Archimonstruo registrado con éxito',
             archimonsterId: archimonster.id
         });
+
+        // Avisa en tiempo real: a /live sin posición, y al panel /admin con
+        // posición incluida.
+        broadcastArchimonster(
+            {
+                id: archimonster.id,
+                name: archimonster.name,
+                server: archimonster.server,
+                date: archimonster.date,
+                imageUrl: getImageUrl(archimonster.id)
+            },
+            {
+                id: archimonster.id,
+                name: archimonster.name,
+                server: archimonster.server,
+                position: archimonster.position,
+                date: archimonster.date,
+                imageUrl: getImageUrl(archimonster.id)
+            }
+        );
     } catch (error) {
         console.error('Error al registrar el archimonstruo:', error);
         res.status(500).json({ message: 'Error al registrar el archimonstruo' });
