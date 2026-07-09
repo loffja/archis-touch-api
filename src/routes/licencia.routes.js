@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Licencia } from '../models/Licencia.js';
 import { Archimonster } from '../models/Archimonster.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
+import { notifyLicenseUsed } from '../webhook.js';
 
 const router = Router();
 
@@ -119,6 +120,13 @@ router.post('/validateLicencia', async (req, res) => {
             name: archimonster.name,
             date: archimonster.date
         });
+
+        notifyLicenseUsed({
+            pcId: licenciaExistente.pc_id,
+            archimonsterName: archimonster.name,
+            server: archimonster.server
+        });
+
     } catch (error) {
         console.error('Error al validar la licencia:', error);
         res.status(500).json({ message: 'Error al validar la licencia.' });
