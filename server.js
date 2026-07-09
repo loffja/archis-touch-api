@@ -14,6 +14,11 @@ import { sseHandler, sseAdminHandler } from './src/sse.js';
 
 const app = express();
 
+// Render pone tu app detrás de un proxy. Sin esto, req.ip siempre daría la
+// IP interna del proxy en vez de la del visitante real, y tanto el rate
+// limiting como el límite de conexiones SSE por IP no funcionarían bien.
+app.set('trust proxy', 1);
+
 // --- Headers de seguridad estándar ---------------------------------------
 app.use(helmet());
 
