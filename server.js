@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import archimonsterRoutes from './src/routes/archimonster.routes.js';
 import licenciaRoutes from './src/routes/licencia.routes.js';
 import { startCleanupJob } from './src/cleanupJob.js';
+import { sseHandler, sseAdminHandler } from './src/sse.js';
 
 const app = express();
 
@@ -54,9 +55,6 @@ const authLimiter = rateLimit({
 app.use(['/validateLicencia', '/registerLicencia'], authLimiter);
 
 // --- Base de datos ------------------------------------------------------
-
-
-// --- Base de datos ------------------------------------------------------
 if (!process.env.MONGO_URI) {
     console.error('Falta la variable de entorno MONGO_URI. El servidor no puede arrancar sin ella.');
     process.exit(1);
@@ -70,6 +68,12 @@ mongoose.connect(process.env.MONGO_URI)
 app.get('/', (req, res) => {
     res.json({ status: 'ok', service: 'Archis Touch API' });
 });
+
+// Server-Sent Events: usado por /live en el frontend para recibir avisos
+// en tiempo real, sin tener que refrescar.
+app.get('/events', sseHandler);
+// Igual, pero con posición incluida, para el panel /admin.
+app.get('/admin/events', sseAdminHandler);
 
 app.use(archimonsterRoutes);
 app.use(licenciaRoutes);
