@@ -3,6 +3,7 @@ import { Licencia } from '../models/Licencia.js';
 import { Archimonster } from '../models/Archimonster.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { notifyLicenseUsed } from '../webhook.js';
+import { logAction } from '../audit.js';
 
 const router = Router();
 
@@ -54,6 +55,7 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
             message: 'Licencia registrada con éxito',
             expiresAt
         });
+        logAction('licencia_creada', { pc_id, licencia, expiresAt });
     } catch (error) {
         console.error('Error al registrar la licencia:', error);
         res.status(500).json({ message: 'Error al registrar la licencia' });
@@ -68,6 +70,9 @@ router.post('/validateLicencia', async (req, res) => {
         return res.status(400).json({ message: 'Licencia o ID de archimonstruo no proporcionados.' });
     }
 
+    // Blindaje contra inyección NoSQL: si "licencia" no es un string simple
+    // (por ejemplo, un objeto tipo { "$ne": null }), Mongo podría interpretarlo
+    // como un operador de consulta en vez de un valor literal a buscar.
     if (typeof licencia !== 'string' || typeof archimonsterId !== 'string' && typeof archimonsterId !== 'number') {
         return res.status(400).json({ message: 'Formato de datos inválido.' });
     }
@@ -108,7 +113,6 @@ router.post('/validateLicencia', async (req, res) => {
         await licenciaExistente.save();
 
         const archimonster = await Archimonster.findOne({ id: archimonsterIdNum });
-
         if (!archimonster) {
             return res.status(404).json({ message: 'Archimonstruo no encontrado.' });
         }
@@ -127,7 +131,6 @@ router.post('/validateLicencia', async (req, res) => {
             archimonsterName: archimonster.name,
             server: archimonster.server
         });
-
     } catch (error) {
         console.error('Error al validar la licencia:', error);
         res.status(500).json({ message: 'Error al validar la licencia.' });
@@ -145,6 +148,7 @@ router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
             return res.status(404).json({ message: 'Licencia no encontrada.' });
         }
         res.status(200).json({ message: 'Licencia eliminada con éxito.' });
+        logAction('licencia_eliminada', { licencia });
     } catch (error) {
         console.error('Error al eliminar la licencia:', error);
         res.status(500).json({ message: 'Error al eliminar la licencia.' });
