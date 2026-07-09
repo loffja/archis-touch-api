@@ -160,6 +160,55 @@ router.post('/validateLicencia', async (req, res) => {
     }
 });
 
+// PUT /licencias/:licencia/extend
+// Añade tiempo a una licencia existente. Si ya está activa, se suma al
+// tiempo que le queda; si ya caducó, cuenta desde ahora mismo.
+// Body: { durationValue, durationUnit }
+router.put('/licencias/:licencia/extend', requireAdminKey, async (req, res) => {
+    const { licencia } = req.params;
+    const { durationValue, durationUnit } = req.body;
+
+    const unitMs = UNIT_TO_MS[durationUnit];
+    const value = Number(durationValue);
+
+    if (!unitMs) {
+        return res.status(400).json({
+            message: `Unidad de duración inválida. Usa una de: ${Object.keys(UNIT_TO_MS).join(', ')}`
+        });
+    }
+    if (!Number.isFinite(value) || value <= 0) {
+        return res.status(400).json({ message: 'durationValue debe ser un número mayor que 0.' });
+    }
+
+    try {
+        const existente = await Licencia.findOne({ licencia });
+        if (!existente) {
+            return res.status(404).json({ message: 'Licencia no encontrada.' });
+        }
+        if (!existente.expiresAt) {
+            return res.status(400).json({ message: 'Esta licencia ya es permanente, no hace falta extenderla.' });
+        }
+
+        const now = Date.now();
+        const base = Math.max(existente.expiresAt.getTime(), now);
+        existente.expiresAt = new Date(base + value * unitMs);
+        await existente.save();
+
+        res.status(200).json({
+            message: 'Licencia extendida con éxito.',
+            expiresAt: existente.expiresAt
+        });
+        logAction('licencia_extendida', {
+            licencia,
+            expiresAt: existente.expiresAt,
+            by: req.adminName
+        });
+    } catch (error) {
+        console.error('Error al extender la licencia:', error);
+        res.status(500).json({ message: 'Error al extender la licencia.' });
+    }
+});
+
 // DELETE /licencias/:licencia
 // Revoca una licencia (ej. si se ha filtrado o quieres desactivarla).
 router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
