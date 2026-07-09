@@ -57,7 +57,7 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
             message: 'Licencia registrada con éxito',
             expiresAt
         });
-        logAction('licencia_creada', { pc_id, licencia, expiresAt });
+        logAction('licencia_creada', { pc_id, licencia, expiresAt, by: req.adminName });
     } catch (error) {
         console.error('Error al registrar la licencia:', error);
         res.status(500).json({ message: 'Error al registrar la licencia' });
@@ -171,7 +171,7 @@ router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
             return res.status(404).json({ message: 'Licencia no encontrada.' });
         }
         res.status(200).json({ message: 'Licencia eliminada con éxito.' });
-        logAction('licencia_eliminada', { licencia });
+        logAction('licencia_eliminada', { licencia, by: req.adminName });
     } catch (error) {
         console.error('Error al eliminar la licencia:', error);
         res.status(500).json({ message: 'Error al eliminar la licencia.' });
