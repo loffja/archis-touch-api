@@ -10,6 +10,7 @@ import licenciaRoutes from './src/routes/licencia.routes.js';
 import statsRoutes from './src/routes/stats.routes.js';
 import promoRoutes from './src/routes/promo.routes.js';
 import auditRoutes from './src/routes/audit.routes.js';
+import settingsRoutes from './src/routes/settings.routes.js';
 import { startCleanupJob } from './src/cleanupJob.js';
 import { sseHandler, sseAdminHandler } from './src/sse.js';
 
@@ -125,6 +126,7 @@ app.use(licenciaRoutes);
 app.use(statsRoutes);
 app.use(promoRoutes);
 app.use(auditRoutes);
+app.use(settingsRoutes);
 
 // --- Limpieza periódica de registros antiguos ----------------------------
 startCleanupJob();
