@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import { AdminKey } from '../models/AdminKey.js';
-import { requireAdminKey } from '../middleware/requireAdminKey.js';
+import { requireAdminKey, requireMasterAdminKey } from '../middleware/requireAdminKey.js';
 import { logAction } from '../audit.js';
 
 const router = Router();
@@ -11,7 +11,7 @@ function generateAdminKey() {
 }
 
 // GET /admin/adminkeys
-router.get('/admin/adminkeys', requireAdminKey, async (req, res) => {
+router.get('/admin/adminkeys', requireMasterAdminKey, async (req, res) => {
     try {
         const keys = await AdminKey.find().sort({ date: -1 });
         res.status(200).json(keys);
@@ -23,7 +23,7 @@ router.get('/admin/adminkeys', requireAdminKey, async (req, res) => {
 
 // POST /admin/adminkeys
 // Body: { name }. La clave se genera sola (no se elige a mano).
-router.post('/admin/adminkeys', requireAdminKey, async (req, res) => {
+router.post('/admin/adminkeys', requireMasterAdminKey, async (req, res) => {
     const { name } = req.body;
     if (!name || typeof name !== 'string') {
         return res.status(400).json({ message: 'Falta el nombre.' });
@@ -44,7 +44,7 @@ router.post('/admin/adminkeys', requireAdminKey, async (req, res) => {
 });
 
 // DELETE /admin/adminkeys/:id
-router.delete('/admin/adminkeys/:id', requireAdminKey, async (req, res) => {
+router.delete('/admin/adminkeys/:id', requireMasterAdminKey, async (req, res) => {
     try {
         const removed = await AdminKey.findByIdAndDelete(req.params.id);
         if (!removed) {
