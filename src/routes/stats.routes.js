@@ -2,15 +2,14 @@ import { Router } from 'express';
 import { Licencia } from '../models/Licencia.js';
 import { DailyStat, todayKey } from '../models/DailyStat.js';
 import { ARCHIMONSTER_NAMES } from '../data/archimonsterNames.js';
-import { requireAdminKey } from '../middleware/requireAdminKey.js';
 
 const router = Router();
 
-// GET /admin/stats
-// Foto rápida del negocio: archimonstruos detectados hoy, licencias
-// activas ahora mismo, y el archimonstruo más consultado (agregando el
-// historial de uso guardado en cada licencia).
-router.get('/admin/stats', requireAdminKey, async (req, res) => {
+// GET /stats
+// Pública (se muestra en /live): archimonstruos detectados hoy, licencias
+// activas ahora mismo, y el archimonstruo más consultado. Ninguno de estos
+// datos es sensible (no incluye posiciones ni nada de pago).
+router.get('/stats', async (req, res) => {
     try {
         const today = await DailyStat.findOne({ date: todayKey() });
         const archimonstrosHoy = today?.count ?? 0;
