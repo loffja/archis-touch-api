@@ -11,6 +11,8 @@ import statsRoutes from './src/routes/stats.routes.js';
 import promoRoutes from './src/routes/promo.routes.js';
 import auditRoutes from './src/routes/audit.routes.js';
 import settingsRoutes from './src/routes/settings.routes.js';
+import adminKeysRoutes from './src/routes/adminkeys.routes.js';
+import { AdminKey } from './src/models/AdminKey.js';
 import { startCleanupJob } from './src/cleanupJob.js';
 import { sseHandler, sseAdminHandler } from './src/sse.js';
 
@@ -73,13 +75,20 @@ const keyRouteLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { message: 'Demasiadas peticiones fallidas, inténtalo más tarde.' },
-    skip: (req) => {
+    skip: async (req) => {
         const adminKey = req.headers['x-admin-key'] || req.query.key;
         const botKey = req.headers['x-bot-key'];
-        return (
-            (!!adminKey && adminKey === process.env.ADMIN_API_KEY) ||
-            (!!botKey && botKey === process.env.BOT_API_KEY)
-        );
+
+        if (botKey && botKey === process.env.BOT_API_KEY) return true;
+        if (!adminKey) return false;
+        if (adminKey === process.env.ADMIN_API_KEY) return true;
+
+        try {
+            const match = await AdminKey.findOne({ key: adminKey, active: true });
+            return !!match;
+        } catch {
+            return false;
+        }
     }
 });
 app.use(['/admin', '/registerArchimonster', '/registerLicencia', '/licencias'], keyRouteLimiter);
@@ -127,6 +136,7 @@ app.use(statsRoutes);
 app.use(promoRoutes);
 app.use(auditRoutes);
 app.use(settingsRoutes);
+app.use(adminKeysRoutes);
 
 // --- Limpieza periódica de registros antiguos ----------------------------
 startCleanupJob();
