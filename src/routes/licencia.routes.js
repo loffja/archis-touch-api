@@ -8,6 +8,7 @@ import { logAction } from '../audit.js';
 const router = Router();
 
 const TWO_MINUTES_MS = 2 * 60 * 1000;
+const LICENSE_COOLDOWN_MS = 8 * 1000;
 
 // Unidades de duración soportadas al registrar una licencia con caducidad.
 const UNIT_TO_MS = {
@@ -94,6 +95,21 @@ router.post('/validateLicencia', async (req, res) => {
         }
 
         const now = new Date();
+
+        // Cooldown anti-scraping: no importa para qué archimonstruo, esta
+        // licencia no puede usarse dos veces seguidas demasiado rápido. Un
+        // humano real nunca lo nota; un script barriendo todos los IDs
+        // activos sí se frena.
+        if (licenciaExistente.lastUsedAt) {
+            const sinceLastUse = now - licenciaExistente.lastUsedAt;
+            if (sinceLastUse < LICENSE_COOLDOWN_MS) {
+                const waitSeconds = Math.ceil((LICENSE_COOLDOWN_MS - sinceLastUse) / 1000);
+                return res.status(429).json({
+                    message: `Espera ${waitSeconds}s antes de tu próxima consulta.`
+                });
+            }
+        }
+
         const usedEntry = licenciaExistente.usedFor.find(
             (entry) => entry.id === archimonsterIdNum
         );
@@ -110,6 +126,7 @@ router.post('/validateLicencia', async (req, res) => {
             licenciaExistente.usedFor.push({ id: archimonsterIdNum, date: now });
         }
 
+        licenciaExistente.lastUsedAt = now;
         await licenciaExistente.save();
 
         const archimonster = await Archimonster.findOne({ id: archimonsterIdNum });
