@@ -29,3 +29,19 @@ export async function requireAdminKey(req, res, next) {
 
     return res.status(401).json({ message: 'No autorizado.' });
 }
+
+// Igual que requireAdminKey, pero SOLO acepta la clave maestra
+// (ADMIN_API_KEY). Los administradores adicionales, aunque tengan acceso
+// normal al panel, no pueden crear ni revocar otros administradores.
+export function requireMasterAdminKey(req, res, next) {
+    const key = req.headers['x-admin-key'] || req.query.key;
+
+    if (key && process.env.ADMIN_API_KEY && key === process.env.ADMIN_API_KEY) {
+        req.adminName = 'Admin principal';
+        return next();
+    }
+
+    return res.status(403).json({
+        message: 'Solo el administrador principal puede gestionar administradores.'
+    });
+}
