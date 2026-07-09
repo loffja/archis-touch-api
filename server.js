@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 
 import archimonsterRoutes from './src/routes/archimonster.routes.js';
 import licenciaRoutes from './src/routes/licencia.routes.js';
+import statsRoutes from './src/routes/stats.routes.js';
 import { startCleanupJob } from './src/cleanupJob.js';
 import { sseHandler, sseAdminHandler } from './src/sse.js';
 
@@ -77,6 +78,7 @@ app.get('/admin/events', sseAdminHandler);
 
 app.use(archimonsterRoutes);
 app.use(licenciaRoutes);
+app.use(statsRoutes);
 
 // --- Limpieza periódica de registros antiguos ----------------------------
 startCleanupJob();
