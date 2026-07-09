@@ -7,6 +7,9 @@ const licenciaSchema = new mongoose.Schema({
     // usado para aplicar el límite de "espera 2 minutos entre usos".
     usedFor: [{ id: Number, date: Date }],
     date: { type: Date, default: Date.now },
+    // Última vez que se usó esta licencia, para CUALQUIER archimonstruo.
+    // Sirve para el cooldown anti-scraping (ver validateLicencia).
+    lastUsedAt: { type: Date, default: null },
     // Si se establece, Mongo borrará este documento automáticamente en
     // cuanto se cumpla esta fecha (índice TTL más abajo). Si es null,
     // la licencia es permanente y nunca se borra sola.
