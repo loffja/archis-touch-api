@@ -4,6 +4,7 @@ import { PromoCode } from '../models/PromoCode.js';
 import { Licencia } from '../models/Licencia.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { logAction } from '../audit.js';
+import { getSettings } from '../settings.js';
 
 const router = Router();
 
@@ -110,6 +111,11 @@ router.delete('/admin/promocodes/:code', requireAdminKey, async (req, res) => {
 // llega con contenido, se rechaza como si el código fuera inválido, sin dar
 // pistas de que se detectó como bot.
 router.post('/redeem', async (req, res) => {
+    const settings = await getSettings();
+    if (!settings.redeemEnabled) {
+        return res.status(503).json({ message: 'El canje de códigos está temporalmente desactivado.' });
+    }
+
     const { code, pc_id, website } = req.body;
 
     if (website) {
