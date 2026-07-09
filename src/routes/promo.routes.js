@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { PromoCode } from '../models/PromoCode.js';
 import { Licencia } from '../models/Licencia.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
+import { logAction } from '../audit.js';
 
 const router = Router();
 
@@ -62,6 +63,12 @@ router.post('/admin/promocodes', requireAdminKey, async (req, res) => {
             maxUses: parsedMaxUses
         }).save();
         res.status(200).json({ message: 'Código creado con éxito.', promo });
+        logAction('codigo_creado', {
+            code: promo.code,
+            durationValue: promo.durationValue,
+            durationUnit: promo.durationUnit,
+            maxUses: promo.maxUses
+        });
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({ message: 'Ese código ya existe.' });
@@ -90,6 +97,7 @@ router.delete('/admin/promocodes/:code', requireAdminKey, async (req, res) => {
             return res.status(404).json({ message: 'Código no encontrado.' });
         }
         res.status(200).json({ message: 'Código eliminado.' });
+        logAction('codigo_eliminado', { code: req.params.code });
     } catch (error) {
         console.error('Error al eliminar código promocional:', error);
         res.status(500).json({ message: 'Error al eliminar el código.' });
