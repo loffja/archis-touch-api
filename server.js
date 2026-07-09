@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import archimonsterRoutes from './src/routes/archimonster.routes.js';
 import licenciaRoutes from './src/routes/licencia.routes.js';
 import statsRoutes from './src/routes/stats.routes.js';
+import promoRoutes from './src/routes/promo.routes.js';
 import { startCleanupJob } from './src/cleanupJob.js';
 import { sseHandler, sseAdminHandler } from './src/sse.js';
 
@@ -53,7 +54,7 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: 'Demasiados intentos, espera unos minutos.' }
 });
-app.use(['/validateLicencia', '/registerLicencia'], authLimiter);
+app.use(['/validateLicencia', '/registerLicencia', '/redeem'], authLimiter);
 
 // --- Base de datos ------------------------------------------------------
 if (!process.env.MONGO_URI) {
@@ -79,6 +80,7 @@ app.get('/admin/events', sseAdminHandler);
 app.use(archimonsterRoutes);
 app.use(licenciaRoutes);
 app.use(statsRoutes);
+app.use(promoRoutes);
 
 // --- Limpieza periódica de registros antiguos ----------------------------
 startCleanupJob();
