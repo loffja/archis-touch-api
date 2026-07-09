@@ -42,7 +42,7 @@ router.put('/admin/settings', requireAdminKey, async (req, res) => {
             redeemEnabled: settings.redeemEnabled,
             validateEnabled: settings.validateEnabled
         });
-        logAction('ajustes_actualizados', update);
+        logAction('ajustes_actualizados', { ...update, by: req.adminName });
     } catch (error) {
         console.error('Error al actualizar ajustes:', error);
         res.status(500).json({ message: 'Error al actualizar ajustes.' });
