@@ -118,7 +118,8 @@ router.post('/validateLicencia', async (req, res) => {
             position: archimonster.position,
             server: archimonster.server,
             name: archimonster.name,
-            date: archimonster.date
+            date: archimonster.date,
+            licenseExpiresAt: licenciaExistente.expiresAt
         });
 
         notifyLicenseUsed({
