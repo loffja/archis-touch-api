@@ -1,18 +1,31 @@
-// Exige que la petición traiga el header "x-admin-key" con el valor exacto
-// de la variable de entorno ADMIN_API_KEY. Se usa para proteger las rutas
-// de administración (registrar/eliminar/listar licencias) para que no sean
-// de acceso público aunque alguien conozca la URL.
-export function requireAdminKey(req, res, next) {
-    const key = req.headers['x-admin-key'];
+import { AdminKey } from '../models/AdminKey.js';
 
-    if (!process.env.ADMIN_API_KEY) {
-        console.error('ADMIN_API_KEY no está configurada en el servidor.');
-        return res.status(500).json({ message: 'Configuración de administrador incompleta.' });
-    }
+// Exige que la petición traiga el header "x-admin-key" (o ?key= para SSE)
+// con una clave válida: la clave maestra (ADMIN_API_KEY, variable de
+// entorno) o cualquier clave adicional creada desde /admin/adminkeys.
+// Además, deja anotado en req.adminName QUIÉN hizo la petición, para que
+// el registro de actividad diga quién fue en vez de "un admin".
+export async function requireAdminKey(req, res, next) {
+    const key = req.headers['x-admin-key'] || req.query.key;
 
-    if (!key || key !== process.env.ADMIN_API_KEY) {
+    if (!key) {
         return res.status(401).json({ message: 'No autorizado.' });
     }
 
-    next();
+    if (process.env.ADMIN_API_KEY && key === process.env.ADMIN_API_KEY) {
+        req.adminName = 'Admin principal';
+        return next();
+    }
+
+    try {
+        const match = await AdminKey.findOne({ key, active: true });
+        if (match) {
+            req.adminName = match.name;
+            return next();
+        }
+    } catch (error) {
+        console.error('Error comprobando claves de admin adicionales:', error);
+    }
+
+    return res.status(401).json({ message: 'No autorizado.' });
 }
