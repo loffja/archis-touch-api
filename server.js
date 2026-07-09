@@ -62,6 +62,27 @@ const authLimiter = rateLimit({
 });
 app.use(['/validateLicencia', '/registerLicencia', '/redeem'], authLimiter);
 
+// Límite igual de estricto para las rutas protegidas por clave de admin/bot
+// (evita que alguien pruebe muchas claves distintas contra ellas). Solo
+// cuenta las peticiones que fallan la clave — si mandas la clave correcta,
+// esto ni se activa, así que a ti nunca te frena por usar el panel normal.
+const keyRouteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Demasiadas peticiones fallidas, inténtalo más tarde.' },
+    skip: (req) => {
+        const adminKey = req.headers['x-admin-key'] || req.query.key;
+        const botKey = req.headers['x-bot-key'];
+        return (
+            (!!adminKey && adminKey === process.env.ADMIN_API_KEY) ||
+            (!!botKey && botKey === process.env.BOT_API_KEY)
+        );
+    }
+});
+app.use(['/admin', '/registerArchimonster', '/registerLicencia', '/licencias'], keyRouteLimiter);
+
 // --- Variables de entorno requeridas --------------------------------------
 // Si falta cualquiera de estas, el servidor se niega a arrancar con un
 // mensaje claro, en vez de arrancar "a medias" y fallar más tarde de forma
