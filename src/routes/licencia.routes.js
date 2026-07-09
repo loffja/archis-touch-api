@@ -4,6 +4,7 @@ import { Archimonster } from '../models/Archimonster.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { notifyLicenseUsed } from '../webhook.js';
 import { logAction } from '../audit.js';
+import { getSettings } from '../settings.js';
 
 const router = Router();
 
@@ -65,6 +66,11 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
 
 // POST /validateLicencia
 router.post('/validateLicencia', async (req, res) => {
+    const settings = await getSettings();
+    if (!settings.validateEnabled) {
+        return res.status(503).json({ message: 'La revelación de posiciones está temporalmente desactivada.' });
+    }
+
     const { licencia, archimonsterId } = req.body;
 
     if (!licencia || !archimonsterId) {
