@@ -97,10 +97,16 @@ router.delete('/admin/promocodes/:code', requireAdminKey, async (req, res) => {
 });
 
 // POST /redeem
-// Pública. Body: { code, pc_id }. Genera y devuelve una licencia nueva si
-// el código existe, está activo y no ha llegado a su límite de usos.
+// Pública. Body: { code, pc_id, website? }. "website" es un campo honeypot:
+// invisible para humanos, pero los bots automatizados suelen rellenarlo. Si
+// llega con contenido, se rechaza como si el código fuera inválido, sin dar
+// pistas de que se detectó como bot.
 router.post('/redeem', async (req, res) => {
-    const { code, pc_id } = req.body;
+    const { code, pc_id, website } = req.body;
+
+    if (website) {
+        return res.status(404).json({ message: 'Código inválido o inactivo.' });
+    }
 
     if (!code || typeof code !== 'string' || !pc_id || typeof pc_id !== 'string') {
         return res.status(400).json({ message: 'Faltan datos en la solicitud.' });
