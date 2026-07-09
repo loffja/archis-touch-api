@@ -116,7 +116,8 @@ router.post('/validateLicencia', async (req, res) => {
             message: 'Licencia válida.',
             position: archimonster.position,
             server: archimonster.server,
-            name: archimonster.name
+            name: archimonster.name,
+            date: archimonster.date
         });
     } catch (error) {
         console.error('Error al validar la licencia:', error);
