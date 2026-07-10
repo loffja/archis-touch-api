@@ -20,9 +20,13 @@ router.get('/stats', async (req, res) => {
         });
 
         const licencias = await Licencia.find({}, { usedFor: 1 });
+        const windowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const counts = new Map();
         for (const l of licencias) {
             for (const entry of l.usedFor || []) {
+                // Solo cuenta usos de las últimas 24h — así "más buscado" no
+                // se queda pegado para siempre con datos de hace días.
+                if (!entry.date || entry.date < windowStart) continue;
                 counts.set(entry.id, (counts.get(entry.id) || 0) + 1);
             }
         }
@@ -30,7 +34,7 @@ router.get('/stats', async (req, res) => {
         let masBuscado = null;
         for (const [id, usos] of counts.entries()) {
             if (!masBuscado || usos > masBuscado.usos) {
-                masBuscado = { id, usos, name: ARCHIMONSTER_NAMES[id] || 'Desconocido' };
+                masBuscado = { id, usos, name: ARCHIMONSTER_NAMES[id] || '------' };
             }
         }
 
