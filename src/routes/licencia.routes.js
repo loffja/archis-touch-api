@@ -5,6 +5,7 @@ import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { notifyLicenseUsed } from '../webhook.js';
 import { logAction } from '../audit.js';
 import { getSettings } from '../settings.js';
+import { generateReferralCode, creditReferral } from '../referral.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ const UNIT_TO_MS = {
 // Body: { pc_id, licencia, durationValue?, durationUnit? }
 // Si no se envían durationValue/durationUnit, la licencia es permanente.
 router.post('/registerLicencia', requireAdminKey, async (req, res) => {
-    const { pc_id, licencia, durationValue, durationUnit } = req.body;
+    const { pc_id, licencia, durationValue, durationUnit, referralCode } = req.body;
 
     if (!pc_id || !licencia) {
         return res.status(400).json({ message: 'Faltan datos en la solicitud' });
@@ -52,12 +53,25 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
     }
 
     try {
-        await new Licencia({ pc_id, licencia, expiresAt }).save();
+        const ownReferralCode = generateReferralCode();
+        await new Licencia({ pc_id, licencia, expiresAt, referralCode: ownReferralCode }).save();
         res.status(200).json({
             message: 'Licencia registrada con éxito',
-            expiresAt
+            expiresAt,
+            referralCode: ownReferralCode
         });
         logAction('licencia_creada', { pc_id, licencia, expiresAt, by: req.adminName });
+
+        if (referralCode) {
+            const credited = await creditReferral(referralCode, pc_id);
+            if (credited) {
+                logAction('referido_recompensado', {
+                    referralCode,
+                    referrerPcId: credited.pc_id,
+                    nuevoPcId: pc_id
+                });
+            }
+        }
     } catch (error) {
         console.error('Error al registrar la licencia:', error);
         res.status(500).json({ message: 'Error al registrar la licencia' });
@@ -146,7 +160,8 @@ router.post('/validateLicencia', async (req, res) => {
             server: archimonster.server,
             name: archimonster.name,
             date: archimonster.date,
-            licenseExpiresAt: licenciaExistente.expiresAt
+            licenseExpiresAt: licenciaExistente.expiresAt,
+            referralCode: licenciaExistente.referralCode
         });
 
         notifyLicenseUsed({
