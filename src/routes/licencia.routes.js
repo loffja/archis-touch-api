@@ -224,6 +224,37 @@ router.put('/licencias/:licencia/extend', requireAdminKey, async (req, res) => {
     }
 });
 
+// POST /licencia/info
+// Pública. Body: { licencia }. Consulta el estado y el código de referido
+// de una licencia SIN necesitar un archimonstruo activo — para que
+// cualquiera pueda ver/recuperar su código de referido en cualquier
+// momento, no solo la primera vez que se crea o se revela una posición.
+router.post('/licencia/info', async (req, res) => {
+    const { licencia } = req.body;
+
+    if (!licencia || typeof licencia !== 'string') {
+        return res.status(400).json({ message: 'Falta la licencia.' });
+    }
+
+    try {
+        const existente = await Licencia.findOne({ licencia });
+        if (!existente) {
+            return res.status(404).json({ message: 'Licencia no encontrada.' });
+        }
+
+        const expired = existente.expiresAt ? existente.expiresAt <= new Date() : false;
+
+        res.status(200).json({
+            expiresAt: existente.expiresAt,
+            expired,
+            referralCode: existente.referralCode
+        });
+    } catch (error) {
+        console.error('Error al consultar licencia:', error);
+        res.status(500).json({ message: 'Error al consultar la licencia.' });
+    }
+});
+
 // DELETE /licencias/:licencia
 // Revoca una licencia (ej. si se ha filtrado o quieres desactivarla).
 router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
