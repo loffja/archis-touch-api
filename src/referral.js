@@ -2,7 +2,7 @@ import { Licencia } from './models/Licencia.js';
 
 // Recompensa por cada persona que se registre usando tu código: +2 días.
 // Solo gana quien refiere, no la persona nueva.
-const REFERRAL_BONUS_MS = 2 * 24 * 60 * 60 * 1000;
+const REFERRAL_BONUS_MS = 1 * 24 * 60 * 60 * 1000;
 
 export function generateReferralCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin caracteres ambiguos
