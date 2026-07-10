@@ -10,6 +10,9 @@ const licenciaSchema = new mongoose.Schema({
     // Última vez que se usó esta licencia, para CUALQUIER archimonstruo.
     // Sirve para el cooldown anti-scraping (ver validateLicencia).
     lastUsedAt: { type: Date, default: null },
+    // Código propio de esta licencia para el programa de referidos. Si
+    // alguien nuevo lo usa al registrarse, esta licencia gana +2 días.
+    referralCode: { type: String, unique: true, sparse: true },
     // Si se establece, Mongo borrará este documento automáticamente en
     // cuanto se cumpla esta fecha (índice TTL más abajo). Si es null,
     // la licencia es permanente y nunca se borra sola.
