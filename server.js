@@ -63,7 +63,7 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: 'Demasiados intentos, espera unos minutos.' }
 });
-app.use(['/validateLicencia', '/registerLicencia', '/redeem'], authLimiter);
+app.use(['/validateLicencia', '/registerLicencia', '/redeem', '/licencia/info'], authLimiter);
 
 // Límite igual de estricto para las rutas protegidas por clave de admin/bot
 // (evita que alguien pruebe muchas claves distintas contra ellas). Solo
