@@ -5,6 +5,7 @@ import { Licencia } from '../models/Licencia.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { logAction } from '../audit.js';
 import { getSettings } from '../settings.js';
+import { generateReferralCode, creditReferral } from '../referral.js';
 
 const router = Router();
 
@@ -117,7 +118,7 @@ router.post('/redeem', async (req, res) => {
         return res.status(503).json({ message: 'El canje de códigos está temporalmente desactivado.' });
     }
 
-    const { code, pc_id, website } = req.body;
+    const { code, pc_id, website, referralCode } = req.body;
 
     if (website) {
         return res.status(404).json({ message: 'Código inválido o inactivo.' });
@@ -143,7 +144,8 @@ router.post('/redeem', async (req, res) => {
         }
 
         const licencia = generateLicenseKey();
-        await new Licencia({ pc_id, licencia, expiresAt }).save();
+        const ownReferralCode = generateReferralCode();
+        await new Licencia({ pc_id, licencia, expiresAt, referralCode: ownReferralCode }).save();
 
         promo.uses += 1;
         if (promo.uses >= promo.maxUses) promo.active = false;
@@ -152,8 +154,20 @@ router.post('/redeem', async (req, res) => {
         res.status(200).json({
             message: 'Licencia generada con éxito.',
             licencia,
-            expiresAt
+            expiresAt,
+            referralCode: ownReferralCode
         });
+
+        if (referralCode) {
+            const credited = await creditReferral(referralCode, pc_id);
+            if (credited) {
+                logAction('referido_recompensado', {
+                    referralCode,
+                    referrerPcId: credited.pc_id,
+                    nuevoPcId: pc_id
+                });
+            }
+        }
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({
