@@ -8,16 +8,26 @@
 export function notifyDiscordBot(type) {
     const url = process.env.DISCORD_BOT_URL;
     const secret = process.env.DISCORD_BOT_NOTIFY_SECRET;
-    if (!url || !secret) return;
+    if (!url || !secret) {
+        console.log(`[discordNotify] Omitido (${type}): faltan DISCORD_BOT_URL o DISCORD_BOT_NOTIFY_SECRET.`);
+        return;
+    }
 
-    fetch(`${url.replace(/\/$/, '')}/notify`, {
+    const target = `${url.replace(/\/$/, '')}/notify`;
+    console.log(`[discordNotify] Avisando al bot (${type}) → ${target}`);
+
+    fetch(target, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-notify-secret': secret
         },
         body: JSON.stringify({ type })
-    }).catch((error) => {
-        console.error('No se pudo avisar al bot de Discord (no es grave):', error.message);
-    });
+    })
+        .then((res) => {
+            console.log(`[discordNotify] Respuesta del bot (${type}): HTTP ${res.status}`);
+        })
+        .catch((error) => {
+            console.error(`[discordNotify] No se pudo avisar al bot (${type}), no es grave:`, error.message);
+        });
 }
