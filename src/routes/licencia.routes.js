@@ -6,6 +6,7 @@ import { notifyLicenseUsed } from '../webhook.js';
 import { logAction } from '../audit.js';
 import { getSettings } from '../settings.js';
 import { generateReferralCode, creditReferral } from '../referral.js';
+import { notifyDiscordBot } from '../discordNotify.js';
 
 const router = Router();
 
@@ -61,6 +62,7 @@ router.post('/registerLicencia', requireAdminKey, async (req, res) => {
             referralCode: ownReferralCode
         });
         logAction('licencia_creada', { pc_id, licencia, expiresAt, by: req.adminName });
+        notifyDiscordBot('licencias');
 
         if (referralCode) {
             const credited = await creditReferral(referralCode, pc_id);
@@ -218,6 +220,7 @@ router.put('/licencias/:licencia/extend', requireAdminKey, async (req, res) => {
             expiresAt: existente.expiresAt,
             by: req.adminName
         });
+        notifyDiscordBot('licencias');
     } catch (error) {
         console.error('Error al extender la licencia:', error);
         res.status(500).json({ message: 'Error al extender la licencia.' });
@@ -267,6 +270,7 @@ router.delete('/licencias/:licencia', requireAdminKey, async (req, res) => {
         }
         res.status(200).json({ message: 'Licencia eliminada con éxito.' });
         logAction('licencia_eliminada', { licencia, by: req.adminName });
+        notifyDiscordBot('licencias');
     } catch (error) {
         console.error('Error al eliminar la licencia:', error);
         res.status(500).json({ message: 'Error al eliminar la licencia.' });
