@@ -3,6 +3,7 @@ import { getOrCreateSettings } from '../models/Settings.js';
 import { invalidateSettingsCache } from '../settings.js';
 import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { logAction } from '../audit.js';
+import { notifyDiscordBot } from '../discordNotify.js';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.put('/admin/settings', requireAdminKey, async (req, res) => {
             validateEnabled: settings.validateEnabled
         });
         logAction('ajustes_actualizados', { ...update, by: req.adminName });
+        notifyDiscordBot('settings');
     } catch (error) {
         console.error('Error al actualizar ajustes:', error);
         res.status(500).json({ message: 'Error al actualizar ajustes.' });
