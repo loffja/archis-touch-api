@@ -6,6 +6,7 @@ import { requireAdminKey } from '../middleware/requireAdminKey.js';
 import { logAction } from '../audit.js';
 import { getSettings } from '../settings.js';
 import { generateReferralCode, creditReferral } from '../referral.js';
+import { notifyDiscordBot } from '../discordNotify.js';
 
 const router = Router();
 
@@ -168,6 +169,7 @@ router.post('/redeem', async (req, res) => {
                 });
             }
         }
+        notifyDiscordBot('licencias');
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({
